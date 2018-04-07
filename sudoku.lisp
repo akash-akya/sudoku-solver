@@ -9,7 +9,6 @@
                                            (iota 3 :start 0 :step 3)
                                            (iota 3 :start 0 :step 3)))
 
-
 (defun x (pos) (first pos))
 
 (defun y (pos) (second pos))
@@ -66,20 +65,15 @@
                        (col-positions pos))))
     ;; (format t "~a~%" positions)
     (get-missing-numbers positions)))
-    ;; (values (get-missing-numbers positions) (get-missing-positions positions))))
 
 (defun bounding-sq-pos (pos)
   (list (* 3 (floor (x pos) 3))
         (* 3 (floor (y pos) 3))))
 
-;; (map 'list #'get-missing (bounding-sq-pos '(7 5)))
 
 (defun missing-in-sq (pos)
   (let* ((start (bounding-sq-pos pos))
          (missing-sq-positions (get-missing-positions (sq-positions start))))
-    ;; (format t "~% missing-sq-positions: ~a~% numbers: ~a"
-    ;;         missing-sq-positions
-    ;;         (map 'list #'get-missing missing-sq-positions))
     (mapcar #'list
             missing-sq-positions
             (map 'list #'get-missing missing-sq-positions))))
