@@ -1,7 +1,8 @@
 (ql:quickload :iterate)
 (ql:quickload :alexandria)
+(ql:quickload :cl-ppcre)
 
-(defpackage :sudoku (:use :common-lisp :iterate :alexandria))
+(defpackage :sudoku (:use :common-lisp :iterate :alexandria :cl-ppcre))
 (in-package :sudoku)
 
 (defparameter *board* (make-array '(9 9) :element-type 'char))
@@ -50,6 +51,44 @@
               (format t "~a " (getval (list i j))))
         (format t "~%")))
 
+
+(defparameter *print-board* "╔═══╤═══╤═══╦═══╤═══╤═══╦═══╤═══╤═══╗
+║ 100 │ 101 │ 102 ║ 103 │ 104 │ 105 ║ 106 │ 107 │ 108 ║
+╟───┼───┼───╫───┼───┼───╫───┼───┼───╢
+║ 109 │ 110 │ 111 ║ 112 │ 113 │ 114 ║ 115 │ 116 │ 117 ║
+╟───┼───┼───╫───┼───┼───╫───┼───┼───╢
+║ 118 │ 119 │ 120 ║ 121 │ 122 │ 123 ║ 124 │ 125 │ 126 ║
+╠═══╪═══╪═══╬═══╪═══╪═══╬═══╪═══╪═══╣
+║ 127 │ 128 │ 129 ║ 130 │ 131 │ 132 ║ 133 │ 134 │ 135 ║
+╟───┼───┼───╫───┼───┼───╫───┼───┼───╢
+║ 136 │ 137 │ 138 ║ 139 │ 140 │ 141 ║ 142 │ 143 │ 144 ║
+╟───┼───┼───╫───┼───┼───╫───┼───┼───╢
+║ 145 │ 146 │ 147 ║ 148 │ 149 │ 150 ║ 151 │ 152 │ 153 ║
+╠═══╪═══╪═══╬═══╪═══╪═══╬═══╪═══╪═══╣
+║ 154 │ 155 │ 156 ║ 157 │ 158 │ 159 ║ 160 │ 161 │ 162 ║
+╟───┼───┼───╫───┼───┼───╫───┼───┼───╢
+║ 163 │ 164 │ 165 ║ 166 │ 167 │ 168 ║ 169 │ 170 │ 171 ║
+╟───┼───┼───╫───┼───┼───╫───┼───┼───╢
+║ 172 │ 173 │ 174 ║ 175 │ 176 │ 177 ║ 178 │ 179 │ 180 ║
+╚═══╧═══╧═══╩═══╧═══╧═══╩═══╧═══╧═══╝")
+
+(defun get-row (row-num)
+  (iter (for i from 0 to 8)
+        (collect (getval (list row-num i)))))
+
+(defun get-all ()
+  (regex-replace-all
+   (iter (for i from 0 to 8)
+         (appending (get-row i)))))
+
+(defun pretty-print-board ()
+  (flet ((to-string (x)
+           (format nil "~a" (if (zerop x) " " x))))
+    (let ((pb (copy-array *print-board*)))
+      (iter (for num in (get-all))
+            (for i from 100 to 180)
+            (setf pb (regex-replace (to-string i) pb (to-string num))))
+      (format t "~%~a" pb))))
 
 (defun get-missing-positions (positions)
   (remove-if-not (lambda (pos) (zerop (getval pos))) positions))
@@ -169,10 +208,12 @@
 
 (defun solve-board (board)
   (defparameter *board* board)
+  (format t "~%INPUT: ")
+  (pretty-print-board)
   (if (fill-confidant-position-recursively)
-      (format t "~%SOLVED:")
-      (format t "~%FAILED:"))
-  (print-board))
+      (format t "~%~%SOLVED:")
+      (format t "~%~%FAILED:"))
+  (pretty-print-board))
 
 
 (solve-board (transpose #2A((1 0 5 0 0 0 0 0 4)
