@@ -77,9 +77,8 @@
         (collect (getval (list row-num i)))))
 
 (defun get-all ()
-  (regex-replace-all
    (iter (for i from 0 to 8)
-         (appending (get-row i)))))
+         (appending (get-row i))))
 
 (defun pretty-print-board ()
   (let ((pb (copy-array *print-board*))
@@ -88,7 +87,7 @@
                (format nil "~a" (if (zerop x) " " x)))
              (set-value (i v)
                (setf pb (regex-replace (to-string i) pb (to-string v)))))
-      (mapc #'set-value indices (get-all)))
+      (mapc #'set-value  indices (get-all)))
     (format t "~%~a" pb)))
 
 (defun get-missing-positions (positions)
@@ -134,12 +133,17 @@
         (when (equal (appearance num possible-numbers) 1)
           (list (first pair) num))))
 
-(defun all-filled ()
+(defun all-filled? ()
   (equal 0 (length (remove-if-not #'zerop (getvalues +all-positions+)))))
 
 (defun solved? ()
   (and (not (fail?))
      (all-filled)))
+
+(defun get-status ()
+  (cond ((fail?) 'fail)
+        ((all-filled?) 'solved)
+        (t 'incomplete)))
 
 (defun fill-confidant-positions ()
   (let ((changed nil))
@@ -151,8 +155,8 @@
 
 (defun fail-position? (positions)
   (iter (for i in (iota 9 :start 1))
-        (if (> (appearance i positions)  1)
-            (return t)))
+        (if (> (appearance i (getvalues positions))  1)
+            (return-from fail-position? t)))
   nil)
 
 
@@ -166,7 +170,7 @@
   (cond ((null positions) nil)
         ((fail-position? (row-positions (first positions))) t)
         ((fail-position? (col-positions (first positions))) t)
-        ((fail-position? (sq-positions (first positions))) t)
+        ((fail-position? (sq-positions (bounding-sq-pos (first positions)))) t)
         ((find-invalid-positions (missing-in-sq (first positions)))t)
         (t (check-fail (cdr positions)))))
 
@@ -184,20 +188,26 @@
         (appending (missing-in-sq pos))))
 
 (defun fill-confidant-position-recursively ()
-  (if (fill-confidant-positions)
-      (fill-confidant-position-recursively)
-      (try-position)))
+  (let ((status (get-status)))
+    (cond ((eq status 'fail) nil)
+          ((eq status 'solved) t)
+          ((fill-confidant-positions)
+           (fill-confidant-position-recursively))
+          (t (try-position)))))
 
 (defun try-position ()
-  (if (not (or (fail?) (all-filled)))
-      (dolist (position-pair (sort-pair (find-all-missing)))
-        (dolist (val (second position-pair))
-          (let ((back-board (copy-array *board*)))
-            (setval (first position-pair) val)
-            (when (fill-confidant-position-recursively)
-              (return-from try-position t))
-            (defparameter *board* back-board))))
-      (solved?)))
+  (let ((position-pair (first (sort-pair (find-all-missing)))))
+    (dolist (val (second position-pair))
+      (setval (first position-pair) val)
+      (progn
+        (setval (first position-pair) 0)
+        (let ((back-board (copy-array *board*)))
+          (setval (first position-pair) val)
+          (cond ((fill-confidant-position-recursively)
+                 (return-from try-position t)))
+          (defparameter *board* back-board)))
+      (setval (first position-pair) 0)))
+  nil)
 
 (defun transpose (board)
   (let ((new-board (make-array '(9 9))))
