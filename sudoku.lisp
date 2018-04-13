@@ -133,26 +133,6 @@
         (when (equal (appearance num possible-numbers) 1)
           (list (first pair) num))))
 
-(defun all-filled? ()
-  (equal 0 (length (remove-if-not #'zerop (getvalues +all-positions+)))))
-
-(defun solved? ()
-  (and (not (fail?))
-     (all-filled)))
-
-(defun get-status ()
-  (cond ((fail?) 'fail)
-        ((all-filled?) 'solved)
-        (t 'incomplete)))
-
-(defun fill-confidant-positions ()
-  (let ((changed nil))
-    (dolist (position-pair (find-confidant-positions (find-all-missing)))
-      (setf changed t)
-      (dolist (val (cdr position-pair))
-        (setval (first position-pair) val)))
-    changed))
-
 (defun fail-position? (positions)
   (iter (for i in (iota 9 :start 1))
         (if (> (appearance i (getvalues positions))  1)
@@ -177,6 +157,14 @@
 (defun fail? ()
   (check-fail +all-positions+))
 
+(defun all-filled? ()
+  (equal 0 (length (remove-if-not #'zerop (getvalues +all-positions+)))))
+
+(defun get-status ()
+  (cond ((fail?) 'fail)
+        ((all-filled?) 'solved)
+        (t 'incomplete)))
+
 (defun sort-pair (position-pairs)
   (sort position-pairs
         (lambda (a b) (< (length a) (length b)))
@@ -186,6 +174,15 @@
 (defun find-all-missing ()
   (iter (for pos in +all-sq-positions+)
         (appending (missing-in-sq pos))))
+
+
+(defun fill-confidant-positions ()
+  (let ((changed nil))
+    (dolist (position-pair (find-confidant-positions (find-all-missing)))
+      (setf changed t)
+      (dolist (val (cdr position-pair))
+        (setval (first position-pair) val)))
+    changed))
 
 (defun fill-confidant-position-recursively ()
   (let ((status (get-status)))
